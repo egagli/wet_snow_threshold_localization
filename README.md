@@ -27,7 +27,9 @@ for SAR binary wet snow detection, there are a ton of methods for thresholding (
     * FCF: ?
     * Snow classification: https://nsidc.org/data/nsidc-0768/versions/1
     * Snow cover (snow / no snow): https://planetarycomputer.microsoft.com/dataset/modis-10A1-061 (or 8 day)
-  * loop over a bunch of areas, multiple years, save a bunch of these
+  * loop over a bunch of areas, multiple years, save a bunch of these as zarr files?
+      * scene selection criteria
+         * global? what are the extents of our individual datasets
   * questions to consider
     * reference scene
       * time span?
@@ -39,6 +41,19 @@ for SAR binary wet snow detection, there are a ton of methods for thresholding (
       * remote sensing thermal?
       * in-situ weather station?
       * reanalysis?
+* notebook to ingest saved zarr files, stitch all together. possibly ouput as singular large dataframe with each row being a single pixel
+* notebook to analyze full datas
+  * aggregate statistics
+  * histograms analyzing each variable
+    * for example, LIA on x axis, dB change on right axis, then two box plots for each LIA, one for snow and one for no snow, maybe each of those broken into VV and VH
+  * test VV and VH for higher wet snow seperability
+  * given snow / no snow distributions, which threshold provides the most seperability between distributions
+    * create confusion matrix based on optimal threholds
+  * analysis of variance
+  * multiple linear regression
+  * unsupervised machine learning
+    * kmeans clustering
+  * deep learning approach 
 
 
 
