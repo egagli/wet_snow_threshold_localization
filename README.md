@@ -17,9 +17,14 @@ for SAR binary wet snow detection, there are a ton of methods for thresholding (
   * will help us characterize how binary wet snow threshold changes with these variables allowing localization of this threshold
   * end goal would be some sort of heuristic: given a pixel with x vegetation/LC type, y snow class, z incidence angle, we expect at least a backscatter change of -XdB in VV and -YdB in VH from the reference image to the wet snow image
   * if it works, could be the foundation of a “smart” binary wet snow algorithm, where the binary wet snow threshold is variable across a scene as a function of [landcover class, snow class, local incidence angle, etc]
+ 
+![download](https://github.com/egagli/wet_snow_threshold_localization/assets/67975937/051a7cc8-e2bf-46b7-8fc4-d7e10621faa1)
+![download](https://github.com/egagli/wet_snow_threshold_localization/assets/67975937/4353b4a8-6746-450a-b44f-e1295cf71259)
+
+
 
 ## To do list:
-* notebook to build dataset
+* [x] notebook to build dataset
   * data sources
     * for Sentinel-1 RTC data: https://github.com/egagli/sar_snowmelt_timing/blob/main/dev/collaborations/sierra_nevada/sierra_nevada_binary_wet_snow_map_timeseries.ipynb 
     * LIA: https://github.com/egagli/generate_sentinel1_local_incidence_angle_maps
@@ -41,8 +46,8 @@ for SAR binary wet snow detection, there are a ton of methods for thresholding (
       * remote sensing thermal?
       * in-situ weather station?
       * reanalysis?
-* notebook to ingest saved zarr files, stitch all together. possibly ouput as singular large dataframe with each row being a single pixel
-* notebook to analyze full datas
+* [] notebook to ingest saved zarr files, stitch all together. possibly ouput as singular large dataframe with each row being a single pixel
+* [] notebook to analyze full datas
   * aggregate statistics
   * histograms analyzing each variable
     * for example, LIA on x axis, dB change on right axis, then two box plots for each LIA, one for snow and one for no snow, maybe each of those broken into VV and VH
