@@ -310,9 +310,13 @@ def dataset_to_dataframe(dataset):
     return dataframe_obs
 
 
+
 def dataframe_ndsi_to_binary(dataframe, ndsi_thresh):
-    
-    dataframe['modis_binary'] = dataframe['modis_ndsi'].apply(lambda x: 0 if x <= ndsi_thresh else 1)
+    if isinstance(ndsi_thresh, list) and len(ndsi_thresh) == 2:
+        dataframe['modis_binary'] = dataframe['modis_ndsi'].apply(lambda x: 0 if x < ndsi_thresh[0] else (1 if x > ndsi_thresh[1] else np.nan))
+        dataframe = dataframe.dropna(how='any')
+    else:
+        dataframe['modis_binary'] = dataframe['modis_ndsi'].apply(lambda x: 0 if x <= ndsi_thresh else 1)
     
     return dataframe
 
