@@ -3,7 +3,7 @@
 Author: Eric Gagliano (egagli@uw.edu)
 Updated: 01/2024
 """
-
+from typing import Dict, Union, Tuple
 import numpy as np
 import geopandas as gpd
 import rasterio as rio
@@ -25,8 +25,21 @@ import earthaccess
 
 
 
-def get_s1_rtc(bbox_gdf,start_time='2019-01-01',end_time='2019-12-31',resolution=10, epsg=None, resampling=None):
-    
+def get_s1_rtc(bbox_gdf: gpd.GeoDataFrame, start_time: str = '2019-01-01', end_time: str = '2019-12-31', resolution: int = 10, epsg: int = None, resampling: str = None) -> xr.Dataset:
+    """
+    Fetches Sentinel-1 RTC data for a given bounding box and time range.
+
+    Parameters:
+    bbox_gdf (GeoDataFrame): GeoDataFrame containing the bounding box.
+    start_time (str): Start time for the data in 'YYYY-MM-DD' format. Default is '2019-01-01'.
+    end_time (str): End time for the data in 'YYYY-MM-DD' format. Default is '2019-12-31'.
+    resolution (int): Resolution of the data. Default is 10.
+    epsg (int): EPSG code for the coordinate system. If None, it is estimated from the bounding box.
+    resampling (str): Resampling method. If None, no resampling is done.
+
+    Returns:
+    Dataset: xarray Dataset containing the Sentinel-1 RTC data.
+    """    
     if epsg == None:
         epsg = bbox_gdf.estimate_utm_crs().to_epsg()
         
@@ -68,7 +81,18 @@ def get_s1_rtc(bbox_gdf,start_time='2019-01-01',end_time='2019-12-31',resolution
 
 
 
-def aggregate_reference_scenes(ts_ds, time_reference_scenes, reference_scenes_aggregation_technique = 'median'):
+def aggregate_reference_scenes(ts_ds: xr.Dataset, time_reference_scenes: str, reference_scenes_aggregation_technique: str = 'median') -> xr.Dataset:
+    """
+    Aggregates reference scenes based on a specified technique.
+
+    Parameters:
+    ts_ds (Dataset): Time series dataset.
+    time_reference_scenes (str): Time of the reference scenes.
+    reference_scenes_aggregation_technique (str): Technique to aggregate reference scenes. Default is 'median'.
+
+    Returns:
+    Dataset: Aggregated reference scenes.
+    """
     
     if reference_scenes_aggregation_technique == 'mean':
         composite_reference_scenes = ts_ds.sel(time=time_reference_scenes).groupby('sat:relative_orbit').mean()
@@ -79,29 +103,72 @@ def aggregate_reference_scenes(ts_ds, time_reference_scenes, reference_scenes_ag
         
     return composite_reference_scenes
     
-    
-def calculate_ratio_images(ts_ds,composite_reference_scenes):
+def calculate_ratio_images(ts_ds: xr.Dataset, composite_reference_scenes: xr.Dataset) -> xr.Dataset:
+    """
+    Calculates ratio images.
+
+    Parameters:
+    ts_ds (Dataset): Time series dataset.
+    composite_reference_scenes (Dataset): Composite reference scenes.
+
+    Returns:
+    Dataset: Ratio images.
+    """
     
     ratio_images = 10*np.log10(ts_ds.groupby('sat:relative_orbit')/composite_reference_scenes)
     
     return ratio_images
     
     
-def select_closest(group,time_of_interest):
+def select_closest(group: xr.Dataset, time_of_interest: str) -> xr.Dataset:
+    """
+    Selects the closest scene to a given time.
+
+    Parameters:
+    group (Dataset): Group of scenes.
+    time_of_interest (str): Time of interest.
+
+    Returns:
+    Dataset: Scene closest to the time of interest.
+    """
     
     closest = group.sel(time=time_of_interest,method='nearest')
     
     return closest
 
 
-def select_closest_ratio_images(ratio_images, time_target_scene):
+def select_closest_ratio_images(ratio_images: xr.Dataset, time_target_scene: str) -> xr.Dataset:
+    """
+    Selects the closest ratio images to a given time.
+
+    Parameters:
+    ratio_images (Dataset): Ratio images.
+    time_target_scene (str): Time of the target scene.
+
+    Returns:
+    Dataset: Ratio images closest to the time of the target scene.
+    """
     
     ratio_images_closest = ratio_images.groupby('sat:relative_orbit').map(lambda group: select_closest(group, time_target_scene))
     
     return ratio_images_closest
 
 
-def get_ratio_images(bbox_gdf, year, time_reference_scenes, time_target_scene, reference_scenes_aggregation_technique, resolution):
+def get_ratio_images(bbox_gdf: gpd.GeoDataFrame, year: int, time_reference_scenes: str, time_target_scene: str, reference_scenes_aggregation_technique: str, resolution: int) -> xr.Dataset:
+    """
+    Fetches ratio images for a given bounding box and year.
+
+    Parameters:
+    bbox_gdf (GeoDataFrame): GeoDataFrame containing the bounding box.
+    year (int): Year for the data.
+    time_reference_scenes (str): Time of the reference scenes.
+    time_target_scene (str): Time of the target scene.
+    reference_scenes_aggregation_technique (str): Technique to aggregate reference scenes.
+    resolution (int): Resolution of the data.
+
+    Returns:
+    Dataset: Ratio images.
+    """
     
     
     ts_ds = get_s1_rtc(bbox_gdf,
@@ -118,7 +185,16 @@ def get_ratio_images(bbox_gdf, year, time_reference_scenes, time_target_scene, r
     
     return ratio_images_closest
 
-def get_lia(bbox_gdf):
+def get_lia(bbox_gdf: gpd.GeoDataFrame) -> xr.DataArray:
+    """
+    Fetches local incidence angle (LIA) data for a given bounding box.
+
+    Parameters:
+    bbox_gdf (GeoDataFrame): GeoDataFrame containing the bounding box.
+
+    Returns:
+    DataArray: LIA data.
+    """
     
     dem_fp = '/tmp/dems'
     output_fp = '/tmp/lia_maps'
@@ -161,7 +237,17 @@ def get_lia(bbox_gdf):
     return lia
 
 
-def get_worldcover(bbox_gdf, return_classmap=False):
+def get_worldcover(bbox_gdf: gpd.GeoDataFrame, return_classmap: bool = False) -> Union[xr.Dataset, Tuple[xr.Dataset, dict]]:
+    """
+    Fetches worldcover data for a given bounding box.
+
+    Parameters:
+    bbox_gdf (GeoDataFrame): GeoDataFrame containing the bounding box.
+    return_classmap (bool): Whether to return the classmap. Default is False.
+
+    Returns:
+    Dataset or tuple: Worldcover data, and optionally the classmap.
+    """
         
     catalog = pystac_client.Client.open(
     "https://planetarycomputer.microsoft.com/api/stac/v1",
@@ -192,8 +278,16 @@ def get_worldcover(bbox_gdf, return_classmap=False):
         return stack_lc, classmap
     
     
-def get_fcf(bbox_gdf):
-    
+def get_fcf(bbox_gdf: gpd.GeoDataFrame) -> xr.DataArray:
+    """
+    Fetches forest cover fraction (FCF) data for a given bounding box.
+
+    Parameters:
+    bbox_gdf (GeoDataFrame): GeoDataFrame containing the bounding box.
+
+    Returns:
+    DataArray: FCF data.
+    """    
     fcf = rxr.open_rasterio('https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Tree-CoverFraction-layer_EPSG-4326.tif',mask_and_scale=True)
     xmin, ymin, xmax, ymax = bbox_gdf.total_bounds
     fcf = fcf.rio.clip_box(xmin, ymin, xmax, ymax).squeeze()
@@ -236,7 +330,16 @@ def get_snow_class(bbox_gdf):
 
 
 
-def get_modis_ndsi(dataset):
+def get_modis_ndsi(dataset: xr.Dataset) -> Dict[int, xr.DataArray]:
+    """
+    Fetches MODIS NDSI data for each relative orbit in the dataset.
+
+    Parameters:
+    dataset (Dataset): The dataset.
+
+    Returns:
+    dict: A dictionary mapping relative orbits to MODIS NDSI data.
+    """
     
     modis_ndsi_dict = {}
     
@@ -271,7 +374,21 @@ def get_modis_ndsi(dataset):
     
     
         
-def create_dataset(bbox_gdf, year, time_reference_scenes, time_target_scene, reference_scenes_aggregation_technique, resolution):
+def create_dataset(bbox_gdf: gpd.GeoDataFrame, year: int, time_reference_scenes: str, time_target_scene: str, reference_scenes_aggregation_technique: str, resolution: int) -> xr.Dataset:
+    """
+    Creates a dataset with ratio images, local incidence angle, worldcover, forest cover fraction, snow class, and MODIS NDSI data.
+
+    Parameters:
+    bbox_gdf (GeoDataFrame): GeoDataFrame containing the bounding box.
+    year (int): Year for the data.
+    time_reference_scenes (str): Time of the reference scenes.
+    time_target_scene (str): Time of the target scene.
+    reference_scenes_aggregation_technique (str): Technique to aggregate reference scenes.
+    resolution (int): Resolution of the data.
+
+    Returns:
+    Dataset: The created dataset.
+    """
     
     ratio_images = get_ratio_images(bbox_gdf, year, time_reference_scenes, time_target_scene, reference_scenes_aggregation_technique, resolution) # 10m but we pull at 100m
     dataset = ratio_images.to_dataset(name='ratio_images')
@@ -301,7 +418,16 @@ def create_dataset(bbox_gdf, year, time_reference_scenes, time_target_scene, ref
 
 
 
-def dataset_to_dataframe(dataset):
+def dataset_to_dataframe(dataset: xr.Dataset) -> pd.DataFrame:
+    """
+    Converts a dataset to a DataFrame.
+
+    Parameters:
+    dataset (Dataset): The dataset.
+
+    Returns:
+    DataFrame: The converted DataFrame.
+    """
     
     dataframe = dataset.to_dataframe()
     dataframe_obs = dataframe.reset_index()
@@ -311,7 +437,18 @@ def dataset_to_dataframe(dataset):
 
 
 
-def dataframe_ndsi_to_binary(dataframe, ndsi_thresh):
+def dataframe_ndsi_to_binary(dataframe: pd.DataFrame, ndsi_thresh: Union[int, list]) -> pd.DataFrame:
+    """
+    Converts NDSI values in a DataFrame to binary.
+
+    Parameters:
+    dataframe (DataFrame): The DataFrame.
+    ndsi_thresh (int or list): The NDSI threshold(s).
+
+    Returns:
+    DataFrame: The DataFrame with binary NDSI values.
+    """
+    
     if isinstance(ndsi_thresh, list) and len(ndsi_thresh) == 2:
         dataframe['modis_binary'] = dataframe['modis_ndsi'].apply(lambda x: 0 if x < ndsi_thresh[0] else (1 if x > ndsi_thresh[1] else np.nan))
         dataframe = dataframe.dropna(how='any')
@@ -320,7 +457,16 @@ def dataframe_ndsi_to_binary(dataframe, ndsi_thresh):
     
     return dataframe
 
-def dataframe_numbers_to_classes(dataframe):
+def dataframe_numbers_to_classes(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """
+    Converts numeric values in a DataFrame to classes.
+
+    Parameters:
+    dataframe (DataFrame): The DataFrame.
+
+    Returns:
+    DataFrame: The DataFrame with classes.
+    """
     
     description_dict = {10:'Tree cover', 20:'Shrubland', 30:'Grassland', 40:'Cropland', 50:'Built-up', 60:'Bare / sparse vegetation', 70:'Snow and ice', 80:'Permanent water bodies', 90:'Herbaceous wetland', 95:'Mangroves', 100:'Moss and lichen'}
     dataframe['esa_worldcover'] = dataframe['esa_worldcover'].replace(description_dict)
