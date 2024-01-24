@@ -61,5 +61,12 @@ for SAR binary wet snow detection, there are a ton of methods for thresholding (
   * deep learning approach 
 
 
-
+critiques:
+ratio values can be influenced by (that we don't analyze)
+time of year 
+snow depth!!
+stratigraphy
+roughness 
+grain size
+temperature
 
